@@ -31,7 +31,7 @@ The intention of this project is to create a generic repo implementation for lib
     - [`Promise<Uint8Array> repo.get(key)`](#promiseuint8array-repogetkey)
   - [Custom Datastore](#custom-datastore)
     - [`repo.openDatastore`](#repoopendatastore)
-    - [`repo.openDatastore`](#repoopendatastore-1)
+    - [`repo.closeDatastore`](#repoclosedatastore)
   - [Config](#config)
     - [`Promise repo.config.set(key:String, value:Object)`](#promise-repoconfigsetkeystring-valueobject)
     - [`Promise repo.config.replace(value:Object)`](#promise-repoconfigreplacevalueobject)
@@ -139,7 +139,7 @@ await repo.openDatastore(
 console.log('repo.myDatastore is ready')
 ```
 
-#### `repo.openDatastore`
+#### `repo.closeDatastore`
 
 ```javascript
 await repo.closeDatastore('myDatastore')
