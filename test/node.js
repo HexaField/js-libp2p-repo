@@ -13,17 +13,8 @@ const asyncRimraf = promisify(rimraf)
 const asyncNcp = promisify(ncp)
 const fsstat = promisify(fs.stat)
 
-const IPFSRepo = require('../src')
-
-async function createTempRepo (options = {}) {
-  const date = Date.now().toString()
-  const repoPath = path.join(os.tmpdir(), 'test-repo-for-' + date)
-  await asyncNcp(path.join(__dirname, 'test-repo'), repoPath)
-  const repo = new IPFSRepo(repoPath, options)
-  await repo.open()
-  return repo
-}
-
+const Libp2pRepo = require('../src')
+let _repoCount = 0
 describe('IPFS Repo Tests onNode.js', () => {
   require('./options-test')
 //   require('./migrations-test')(createTempRepo)
@@ -84,7 +75,7 @@ describe('IPFS Repo Tests onNode.js', () => {
     const date = Date.now().toString()
     const repoPath = path.join(os.tmpdir(), 'test-repo-for-' + date)
 
-    const repo = new IPFSRepo(repoPath, r.opts)
+    const repo = new Libp2pRepo(repoPath, r.opts)
 
     before(async () => {
       if (r.init) {
@@ -105,6 +96,7 @@ describe('IPFS Repo Tests onNode.js', () => {
     require('./config-test')(repo)
     require('./api-addr-test')(repo)
     require('./datastore-test')(repo)
+    require('./load-node-test')(_repoCount++)
     // if (!r.init) {
     //   require('./interop-test')(repo)
     // }

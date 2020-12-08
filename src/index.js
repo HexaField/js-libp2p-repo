@@ -13,8 +13,9 @@ const spec = require('./spec')
 const apiAddr = require('./api-addr')
 const defaultOptions = require('./default-options')
 const ERRORS = require('./errors')
+const { isNode } = require('ipfs-utils/src/env')
 
-const log = debug('ipfs:repo')
+const log = debug('libp2p:repo')
 
 const noLimit = Number.MAX_SAFE_INTEGER
 const AUTO_MIGRATE_CONFIG_KEY = 'repoAutoMigrate'
@@ -25,9 +26,9 @@ const lockers = {
 }
 
 /**
- * IpfsRepo implements all required functionality to read and write to an ipfs repo.
+ * Libp2pRepo implements all required functionality to read and write to an libp2p repo.
  */
-class IpfsRepo {
+class Libp2pRepo {
   /**
    * @param {string} repoPath - path where the repo is stored
    * @param {Object} options - Configuration
@@ -164,6 +165,12 @@ class IpfsRepo {
           throw new ERRORS.InvalidRepoVersionError('Incompatible repo versions. Automatic migrations disabled. Please migrate the repo manually.')
         }
       }
+
+      await this.openDatastore('keys', isNode ? require('datastore-fs') : require('datastore-level'), isNode ? {} : {
+        sharding: false,
+        prefix: '',
+        version: 2
+      })
 
       this.closed = false
       log('all opened')
@@ -394,8 +401,9 @@ async function getSize (queryFn) {
   return sum
 }
 
-module.exports = IpfsRepo
+module.exports = Libp2pRepo
 module.exports.errors = ERRORS
+module.exports.startRepo = require('./load')
 
 function buildOptions (_options) {
   const options = Object.assign({}, defaultOptions, _options)
