@@ -6,7 +6,6 @@ const { expect } = require('aegir/utils/chai')
 const sinon = require('sinon')
 
 const migrator = require('ipfs-repo-migrations')
-const constants = require('../src/constants')
 const errors = require('../src/errors')
 const IPFSRepo = require('../src')
 
@@ -19,7 +18,7 @@ module.exports = (createTempRepo) => {
     let getLatestMigrationVersionStub
 
     before(() => {
-      repoVersionStub = sinon.stub(constants, 'repoVersion')
+      repoVersionStub = sinon.stub({ repoVersion: 9 }, 'repoVersion')
       migrateStub = sinon.stub(migrator, 'migrate')
       revertStub = sinon.stub(migrator, 'revert')
       getLatestMigrationVersionStub = sinon.stub(migrator, 'getLatestMigrationVersion')

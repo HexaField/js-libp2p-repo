@@ -1,22 +1,17 @@
 'use strict'
 
-const _get = require('just-safe-get')
 const debug = require('debug')
 const Big = require('bignumber.js')
 const errcode = require('err-code')
-const migrator = require('ipfs-repo-migrations')
 const bytes = require('bytes')
 const pathJoin = require('ipfs-utils/src/path-join')
 
-const constants = require('./constants')
 const backends = require('./backends')
 const version = require('./version')
 const config = require('./config')
 const spec = require('./spec')
 const apiAddr = require('./api-addr')
-const blockstore = require('./blockstore')
 const defaultOptions = require('./default-options')
-const defaultDatastore = require('./default-datastore')
 const ERRORS = require('./errors')
 
 const log = debug('ipfs:repo')
@@ -36,13 +31,15 @@ class IpfsRepo {
   /**
    * @param {string} repoPath - path where the repo is stored
    * @param {Object} options - Configuration
+   * @param {number} options.repoVersion - current repo version - outdated or updated repos will be migrated or reverted if possible
    */
-  constructor (repoPath, options) {
+  constructor (repoPath, options = {}) {
     if (typeof repoPath !== 'string') {
       throw new Error('missing repoPath')
     }
 
     this.options = buildOptions(options)
+    this.repoVersion = this.options.repoVersion || 9 // hardcoded until figure out what to do
     this.closed = true
     this.path = repoPath
 
@@ -53,20 +50,32 @@ class IpfsRepo {
     this.config = config(this.root)
     this.spec = spec(this.root)
     this.apiAddr = apiAddr(this.root)
+
+    this.migrator = this.options.migrator || {
+      revert: async (path, repoOptions, toVersion, { ignoreLock, onProgress, isDryRun}) => {
+        this.version.set(toVersion)
+      },
+      migrate: async (path, repoOptions, toVersion, { ignoreLock, onProgress, isDryRun}) => {
+        this.version.set(toVersion)
+      }
+    }
+    this._datastores = {}
   }
 
   /**
    * Initialize a new repo.
    *
-   * @param {Object} config - config to write into `config`.
+   * @param {Object} options
+   * @param {stirng} options.config - config to write into `config`.
+   * @param {string} options.spec - config to write into `spec`.
    * @returns {Promise<void>}
    */
-  async init (config) {
+  async init (options) {
     log('initializing at: %s', this.path)
     await this._openRoot()
-    await this.config.set(buildConfig(config))
-    await this.spec.set(buildDatastoreSpec(config))
-    await this.version.set(constants.repoVersion)
+    await this.config.set(options.config || {})
+    await this.spec.set(options.spec || {})
+    await this.version.set(this.repoVersion)
   }
 
   /**
@@ -95,6 +104,39 @@ class IpfsRepo {
   }
 
   /**
+   * Open a datastore and assigns it to repo
+   * @param {string} name  
+   * @param {Object} options
+   * @param {string} options.storageBackends
+   * @param {string} options.storageBackendOptions
+   */
+  async openDatastore(name, options) {
+    try {
+      const datastore = backends.create(name, pathJoin(this.path, name), Object.assign({}, { storageBackends: {}, storageBackendOptions: {} }, options))
+      await datastore.open()
+      this._datastores[name] = datastore // store the name as a reference to the store, use this[name] to retrieve the store
+      this[name] = datastore
+    } catch(error) {
+      throw error
+    }
+  }
+
+  async closeDatastore(name) {
+
+    if(!this._datastores[name]) {
+      throw new Error('database is not open')
+    }
+
+    try {
+      await this[name].close()
+      delete this._datastores[name]
+      delete this[name]
+    } catch(error) {
+      throw error
+    }
+  }
+
+  /**
    * Open the repo. If the repo is already open an error will be thrown.
    * If the repo is not initialized it will throw an error.
    *
@@ -113,29 +155,16 @@ class IpfsRepo {
       this.lockfile = await this._openLock(this.path)
       log('acquired repo.lock')
 
-      const isCompatible = await this.version.check(constants.repoVersion)
+      const isCompatible = await this.version.check(this.repoVersion)
 
       if (!isCompatible) {
         if (await this._isAutoMigrationEnabled()) {
-          await this._migrate(constants.repoVersion)
+          await this._migrate(this.repoVersion)
+          // throw new Error('migration not yet implemented - migrate manually')
         } else {
           throw new ERRORS.InvalidRepoVersionError('Incompatible repo versions. Automatic migrations disabled. Please migrate the repo manually.')
         }
       }
-
-      log('creating datastore')
-      this.datastore = backends.create('datastore', pathJoin(this.path, 'datastore'), this.options)
-      await this.datastore.open()
-      log('creating blocks')
-      const blocksBaseStore = backends.create('blocks', pathJoin(this.path, 'blocks'), this.options)
-      await blocksBaseStore.open()
-      this.blocks = await blockstore(blocksBaseStore, this.options.storageBackendOptions.blocks)
-      log('creating keystore')
-      this.keys = backends.create('keys', pathJoin(this.path, 'keys'), this.options)
-      await this.keys.open()
-      log('creating pins')
-      this.pins = backends.create('pins', pathJoin(this.path, 'pins'), this.options)
-      await this.pins.open()
 
       this.closed = false
       log('all opened')
@@ -268,10 +297,7 @@ class IpfsRepo {
 
     await Promise.all([
       this.root,
-      this.blocks,
-      this.keys,
-      this.datastore,
-      this.pins
+      ...Object.values(this._datastores)
     ].map((store) => store.close()))
 
     log('unlocking')
@@ -295,22 +321,20 @@ class IpfsRepo {
    * @returns {Object}
    */
   async stat () {
-    const [storageMax, blocks, version, datastore, keys] = await Promise.all([
+    const [storageMax, version, ...datastores] = await Promise.all([
       this._storageMaxStat(),
-      this._blockStat(),
       this.version.get(),
-      getSize(this.datastore),
-      getSize(this.keys)
+      ...Object.values(this._datastores).map((datastore) => getSize(datastore))
     ])
-    const size = blocks.size
-      .plus(datastore)
-      .plus(keys)
+    
+    const size = new Big(0)
+    datastores.forEach((datastore) => size.plus(datastore))
 
     return {
       repoPath: this.path,
       storageMax,
       version: version,
-      numObjects: blocks.count,
+      // numObjects: blocks.count,
       repoSize: size
     }
   }
@@ -339,13 +363,13 @@ class IpfsRepo {
 
     if (currentRepoVersion > toVersion) {
       log('reverting to version ' + toVersion)
-      return migrator.revert(this.path, this.options, toVersion, {
+      return this.migrator.revert(this.path, this.options, toVersion, {
         ignoreLock: true,
         onProgress: this.options.onMigrationProgress
       })
     } else {
       log('migrating to version ' + toVersion)
-      return migrator.migrate(this.path, this.options, toVersion, {
+      return this.migrator.migrate(this.path, this.options, toVersion, {
         ignoreLock: true,
         onProgress: this.options.onMigrationProgress
       })
@@ -360,20 +384,6 @@ class IpfsRepo {
       return new Big(noLimit)
     }
   }
-
-  async _blockStat () {
-    let count = new Big(0)
-    let size = new Big(0)
-
-    for await (const block of this.blocks.query({})) {
-      count = count.plus(1)
-      size = size
-        .plus(block.data.byteLength)
-        .plus(block.cid.bytes.byteLength)
-    }
-
-    return { count, size }
-  }
 }
 
 async function getSize (queryFn) {
@@ -386,8 +396,6 @@ async function getSize (queryFn) {
 }
 
 module.exports = IpfsRepo
-module.exports.utils = { blockstore: require('./blockstore-utils') }
-module.exports.repoVersion = constants.repoVersion
 module.exports.errors = ERRORS
 
 function buildOptions (_options) {
@@ -404,25 +412,4 @@ function buildOptions (_options) {
     options.storageBackendOptions)
 
   return options
-}
-
-// TODO this should come from js-ipfs instead
-function buildConfig (_config) {
-  _config.datastore = Object.assign({}, defaultDatastore, _get(_config, 'datastore', {}))
-
-  return _config
-}
-
-function buildDatastoreSpec (_config) {
-  const spec = Object.assign({}, defaultDatastore.Spec, _get(_config, 'datastore.Spec', {}))
-
-  return {
-    type: spec.type,
-    mounts: spec.mounts.map((mounting) => ({
-      mountpoint: mounting.mountpoint,
-      type: mounting.child.type,
-      path: mounting.child.path,
-      shardFunc: mounting.child.shardFunc
-    }))
-  }
 }

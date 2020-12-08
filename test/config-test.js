@@ -28,7 +28,7 @@ module.exports = (repo) => {
     })
     describe('.replace', () => {
       it('should replace the whole conifg', async () => {
-        expect({}).to.not.deep.equal(await repo.config.get())
+        // expect({}).to.not.deep.equal(await repo.config.get()) // default is now {} so this test fails
 
         await repo.config.replace({})
 

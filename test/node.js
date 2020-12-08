@@ -26,7 +26,7 @@ async function createTempRepo (options = {}) {
 
 describe('IPFS Repo Tests onNode.js', () => {
   require('./options-test')
-  require('./migrations-test')(createTempRepo)
+//   require('./migrations-test')(createTempRepo)
 
   const customLock = {
     lockName: 'test.lock',
@@ -101,19 +101,19 @@ describe('IPFS Repo Tests onNode.js', () => {
     })
 
     require('./repo-test')(repo)
-    require('./blockstore-test')(repo)
-    require('./datastore-test')(repo)
-    require('./keystore-test')(repo)
-    require('./stat-test')(repo)
+    // require('./blockstore-test')(repo)
+    // require('./datastore-test')(repo)
+    // require('./keystore-test')(repo)
+    // require('./stat-test')(repo)
     require('./lock-test')(repo)
     require('./config-test')(repo)
     require('./api-addr-test')(repo)
-    if (!r.init) {
-      require('./interop-test')(repo)
-    }
-    require('./pins-test')(repo)
+    // if (!r.init) {
+    //   require('./interop-test')(repo)
+    // }
+    // require('./pins-test')(repo)
     require('./is-initialized')
   }))
 
-  require('./blockstore-utils-test')()
+//   require('./blockstore-utils-test')()
 })

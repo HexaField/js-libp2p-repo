@@ -159,17 +159,23 @@ module.exports = (repo) => {
         const repo = new IPFSRepo(tempDir(), {
           lock: 'memory',
           storageBackends: {
-            root: FakeDatastore,
-            blocks: FakeDatastore,
-            keys: FakeDatastore,
-            datastore: FakeDatastore,
-            pins: FakeDatastore
+            root: FakeDatastore
           }
         })
         await repo.init({})
         await repo.open()
+        await repo.openDatastore('myDatastore', {
+          storageBackends: {
+            myDatastore: FakeDatastore
+          }
+        })
+        await repo.openDatastore('anotherDatastore', {
+          storageBackends: {
+            anotherDatastore: FakeDatastore
+          }
+        })
         await repo.close()
-        expect(count).to.be.eq(5)
+        expect(count).to.be.eq(3)
       })
 
       it('open twice throws error', async () => {
