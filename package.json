@@ -1,8 +1,8 @@
 {
-  "name": "ipfs-repo",
-  "version": "7.0.0",
-  "description": "IPFS Repo implementation",
-  "leadMaintainer": "Alex Potsides <alex@achingbrain.net>",
+  "name": "libp2p-repo",
+  "version": "1.0.0",
+  "description": "Libp2p Repo implementation",
+  "leadMaintainer": "Josh Field <joshfield999@gmail.com>",
   "main": "src/index.js",
   "files": [
     "src",
@@ -30,14 +30,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ipfs/js-ipfs-repo.git"
+    "url": "https://github.com/hexafield/js-libp2p-repo.git"
   },
   "keywords": [
     "IPFS",
     "libp2p",
     "datastore"
   ],
-  "homepage": "https://github.com/ipfs/js-ipfs-repo",
+  "homepage": "https://github.com/hexafield/js-libp2p-repo",
   "engines": {
     "node": ">=10.0.0",
     "npm": ">=3.0.0"
@@ -108,6 +108,7 @@
     "Jonathan <jkrone@vt.edu>",
     "Justin Chase <justin.m.chase@gmail.com>",
     "Linus Unnebäck <linus@folkdatorn.se>",
-    "Marcus Bernales <mboperator@gmail.com>"
+    "Marcus Bernales <mboperator@gmail.com>",
+    "Josh Field <joshfield999@gmail.com>"
   ]
 }
