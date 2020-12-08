@@ -9,7 +9,7 @@ The intention of this project is to create a generic repo implementation for lib
  - [x] dynamic loading of datastores
  - [x] new tests 
  - [x] implement loader & initialiser functions (similar to how IPFS utilises js-ipfs-repo)
- - [ ] documentation
+ - [x] documentation
 
 ## Lead Maintainer <!-- omit in toc -->
 
