@@ -164,16 +164,8 @@ module.exports = (repo) => {
         })
         await repo.init({})
         await repo.open()
-        await repo.openDatastore('myDatastore', {
-          storageBackends: {
-            myDatastore: FakeDatastore
-          }
-        })
-        await repo.openDatastore('anotherDatastore', {
-          storageBackends: {
-            anotherDatastore: FakeDatastore
-          }
-        })
+        await repo.openDatastore('myDatastore', FakeDatastore)
+        await repo.openDatastore('anotherDatastore', FakeDatastore)
         await repo.close()
         expect(count).to.be.eq(3)
       })

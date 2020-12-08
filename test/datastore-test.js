@@ -10,16 +10,15 @@ module.exports = (repo) => {
   describe('datastore', () => {
     it('should successfully open new datastore', async () => {
       expect(repo.datastore).to.not.exist()
-      await repo.openDatastore('datastore', {
-        storageBackends: {
-            datastore: require('datastore-level')
-        },
-        storageBackendOptions: {
-          sharding: false,
-          prefix: '',
-          version: 2
+      await repo.openDatastore(
+        'datastore',
+        require('datastore-level'),
+        {
+            sharding: false,
+            prefix: '',
+            version: 2
         }
-      })
+      )
       expect(repo.datastore).to.exist()
     })
     const dataList = range(100).map((i) => uint8ArrayFromString(`hello-${i}-${Math.random()}`))

@@ -105,14 +105,13 @@ class IpfsRepo {
 
   /**
    * Open a datastore and assigns it to repo
-   * @param {string} name  
-   * @param {Object} options
-   * @param {string} options.storageBackends
-   * @param {string} options.storageBackendOptions
+   * @param {string} name
+   * @param {Object} storageBackends
+   * @param {Object} storageBackendOptions
    */
-  async openDatastore(name, options) {
+  async openDatastore(name, storageBackend, storageBackendOptions) {
     try {
-      const datastore = backends.create(name, pathJoin(this.path, name), Object.assign({}, { storageBackends: {}, storageBackendOptions: {} }, options))
+      const datastore = backends.create(name, pathJoin(this.path, name), { storageBackends: { [name]: storageBackend }, storageBackendOptions: storageBackendOptions || {} } )
       await datastore.open()
       this._datastores[name] = datastore // store the name as a reference to the store, use this[name] to retrieve the store
       this[name] = datastore
