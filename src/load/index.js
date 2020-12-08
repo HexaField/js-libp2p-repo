@@ -6,7 +6,6 @@ const { ERR_REPO_NOT_INITIALIZED } = require('../errors')
 const uint8ArrayFromString = require('uint8arrays/from-string')
 const uint8ArrayToString = require('uint8arrays/to-string')
 const PeerId = require('peer-id')
-const { mergeOptions } = require('merge-options')
 const createLibP2P = require('./libp2p')
   /**
    *

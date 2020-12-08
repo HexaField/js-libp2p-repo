@@ -8,7 +8,7 @@ The intention of this project is to create a generic repo implementation for lib
 
  - [x] dynamic loading of datastores
  - [x] new tests 
- - [ ] implement loader & initialiser functions (similar to how IPFS utilises js-ipfs-repo)
+ - [x] implement loader & initialiser functions (similar to how IPFS utilises js-ipfs-repo)
  - [ ] documentation
 
 ## Lead Maintainer <!-- omit in toc -->
@@ -18,6 +18,7 @@ The intention of this project is to create a generic repo implementation for lib
 ## Table of Contents <!-- omit in toc -->
 
 - [Usage](#usage)
+- [Loader](#loader)
 - [API](#api)
   - [Setup](#setup)
     - [`new Repo(path[, options])`](#new-repopath-options)
@@ -63,7 +64,15 @@ const repo = new Repo('/tmp/ipfs-repo')
 
 await repo.init({ cool: 'config' })
 await repo.open()
-console.log('repo is ready')
+```
+
+## Loader
+
+Example:
+
+```js
+const { startRepo } = require('ipfs-repo')
+const { peerId, keychain, repo, print, isNew } = await startRepo({ repo: '.myRepo', libp2pConfig: { ... } })
 ```
 
 ## API
