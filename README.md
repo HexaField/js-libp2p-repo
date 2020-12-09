@@ -10,6 +10,7 @@ The intention of this project is to create a generic repo implementation for lib
  - [x] new tests 
  - [x] implement loader & initialiser functions (similar to how IPFS utilises js-ipfs-repo)
  - [x] documentation
+ - [ ] example
 
 ## Lead Maintainer <!-- omit in toc -->
 
@@ -136,7 +137,7 @@ Get a value at the root of the repo
 #### `repo.openDatastore`
 
 ```javascript
-await repo.openDatastore(
+const myDatastore = await repo.openDatastore(
     'myDatastore',
     require('datastore-level'),
     {
@@ -145,7 +146,6 @@ await repo.openDatastore(
         version: 2
     }
 )
-console.log('repo.myDatastore is ready')
 ```
 
 #### `repo.closeDatastore`
