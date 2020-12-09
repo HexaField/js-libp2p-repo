@@ -109,6 +109,7 @@ class Libp2pRepo {
    * @param {string} name
    * @param {Object} storageBackends
    * @param {Object} storageBackendOptions
+   * @returns {datastore-interface}
    */
   async openDatastore(name, storageBackend, storageBackendOptions) {
     try {
@@ -116,6 +117,7 @@ class Libp2pRepo {
       await datastore.open()
       this._datastores[name] = datastore // store the name as a reference to the store, use this[name] to retrieve the store
       this[name] = datastore
+      return datastore
     } catch(error) {
       throw error
     }
